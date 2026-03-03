@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.stadium-dust {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    filter: blur(1px);
+    animation: floatDust linear infinite;
+    will-change: transform;
+}
+
+@keyframes floatDust {
+    from {
+        transform: translateY(0px) translateX(0px);
+    }
+    to {
+        transform: translateY(-200px) translateX(40px);
+    }
+}
