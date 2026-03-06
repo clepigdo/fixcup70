@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
+            $table->string('kategori'); // SMA / Prodi
+            $table->string('nama');
+            $table->string('logo')->nullable();
             $table->timestamps();
         });
     }

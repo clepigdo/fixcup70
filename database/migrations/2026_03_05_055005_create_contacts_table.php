@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('contacts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade');
+            $table->enum('role', ['captain', 'official', 'capo']);
+            $table->string('nama');
+            $table->string('no_wa');
             $table->timestamps();
         });
     }

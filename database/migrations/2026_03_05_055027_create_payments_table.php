@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade');
+            $table->string('bukti_pembayaran');
             $table->timestamps();
         });
     }

@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade');
+            $table->string('foto_tim_berjersey');
+            $table->string('foto_jersey_pemain');
+            $table->string('foto_jersey_kiper');
+            $table->string('foto_player_satu')->nullable();
+            $table->string('foto_player_dua')->nullable();
+            $table->string('surat_rekomendasi')->nullable();
             $table->timestamps();
         });
     }

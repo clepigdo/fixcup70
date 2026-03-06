@@ -7,6 +7,7 @@ export default function FormPendaftaran() {
     const [currentStep, setCurrentStep] = useState(1);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [submitError, setSubmitError] = useState(false);
+    const [backendErrors, setBackendErrors] = useState({});
 
     // Auto-scroll ke atas setiap ganti step
     useEffect(() => {
@@ -55,16 +56,104 @@ export default function FormPendaftaran() {
         },
     });
 
+    // ==========================================
+    // FUNGSI VALIDASI SETIAP STEP
+    // ==========================================
+    const handleNext = () => {
+        // Validasi Step 1: Tim
+        if (currentStep === 1) {
+            if (!data.nama || !data.logo) {
+                alert("⚠️ NAMA TIM dan LOGO wajib diisi/diupload!");
+                return; // Menghentikan eksekusi, user tidak bisa next
+            }
+        }
+
+        // Validasi Step 2: Kontak
+        if (currentStep === 2) {
+            const cap = data.contacts.captain;
+            const off = data.contacts.official;
+            if (!cap.nama || !cap.no_wa || !off.nama || !off.no_wa) {
+                alert(
+                    "⚠️ Kontak CAPTAIN dan OFFICIAL wajib diisi lengkap! (Capo opsional)",
+                );
+                return;
+            }
+        }
+
+        // Validasi Step 3: Pemain (Minimal 8 Lengkap)
+        if (currentStep === 3) {
+            // Hitung berapa pemain yang datanya diisi lengkap (Nama + Pas Foto + Kartu Pelajar/KTM)
+            const validPlayers = data.players.filter(
+                (p) =>
+                    p.nama !== "" &&
+                    p.pas_foto !== null &&
+                    p.foto_kartu !== null,
+            ).length;
+
+            if (validPlayers < 8) {
+                alert(
+                    `⚠️ Minimal 8 PEMAIN harus diisi datanya secara lengkap (Nama, Pas Foto, & Kartu)! Saat ini baru ${validPlayers} pemain yang lengkap.`,
+                );
+                return;
+            }
+        }
+
+        // Validasi Step 4: Official (Minimal 1 Lengkap)
+        if (currentStep === 4) {
+            const validOfficials = data.officials.filter(
+                (o) =>
+                    o.nama !== "" && o.pas_foto !== null && o.foto_ktp !== null,
+            ).length;
+
+            if (validOfficials < 1) {
+                alert(
+                    "⚠️ Minimal 1 OFFICIAL (Manager/Pelatih) wajib diisi lengkap (Nama, Pas Foto, & KTP)!",
+                );
+                return;
+            }
+        }
+
+        // Validasi Step 5: Dokumen (Semua Wajib)
+        if (currentStep === 5) {
+            const docs = data.documents;
+            if (
+                !docs.foto_tim_berjersey ||
+                !docs.foto_jersey_pemain ||
+                !docs.foto_jersey_kiper ||
+                !docs.surat_rekomendasi ||
+                !docs.foto_player_satu ||
+                !docs.foto_player_dua ||
+                !docs.foto_player_tiga
+            ) {
+                alert(
+                    "⚠️ SELURUH DOKUMEN dan FOTO PROMOSI (Total 7 File) wajib diupload sebelum melanjutkan!",
+                );
+                return;
+            }
+        }
+
+        // Validasi Step 6: Payment
+        if (currentStep === 6) {
+            if (!data.payment.bukti_pembayaran) {
+                alert("⚠️ BUKTI PEMBAYARAN wajib diupload!");
+                return;
+            }
+        }
+
+        // Jika lolos semua validasi di atas, barulah pindah ke step selanjutnya
+        setCurrentStep(currentStep + 1);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route("registration.store"), {
             forceFormData: true,
             onSuccess: () => {
-                // Tampilkan animasi sukses!
                 setSubmitSuccess(true);
             },
             onError: (errors) => {
                 console.log("Error detail:", errors);
+                setBackendErrors(errors);
                 setSubmitError(true);
             },
         });
@@ -73,7 +162,7 @@ export default function FormPendaftaran() {
     return (
         // 1. Ubah h-[100dvh] dan overflow-hidden menjadi min-h-screen agar bisa memanjang ke bawah
         <div className="min-h-screen bg-[#020d08] text-white font-sans relative flex flex-col pb-12">
-            <Head title="Pendaftaran SMA | FIX CUP 6.0" />
+            <Head title="Pendaftaran SMA | FIX CUP 7.0" />
 
             {/* BACKGROUND AMBIENCE (Fixed agar ngikutin saat di-scroll) */}
             <div className="fixed inset-0 pointer-events-none z-0">
@@ -88,7 +177,7 @@ export default function FormPendaftaran() {
                 {/* HEADER COMPACT */}
                 <div className="text-center mb-6">
                     <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#fadb04] to-[#ffea6e] uppercase tracking-wide drop-shadow-lg">
-                        Pendaftaran FIX CUP 6.0
+                        Pendaftaran FIX CUP 7.0
                     </h1>
                     <p className="text-[#00d46a] font-bold tracking-[0.3em] text-[10px] md:text-xs uppercase mt-1">
                         Kategori SMA / SMK Sederajat
@@ -791,7 +880,7 @@ export default function FormPendaftaran() {
                                                     136-00-1234567-8
                                                 </p>
                                                 <p className="text-sm font-bold text-white/80 mt-2">
-                                                    A.N. PANITIA FIX CUP 6.0
+                                                    A.N. PANITIA FIX CUP 7.0
                                                 </p>
                                             </div>
 
@@ -1070,7 +1159,7 @@ export default function FormPendaftaran() {
                             onClick={
                                 currentStep === steps.length
                                     ? handleSubmit
-                                    : () => setCurrentStep(currentStep + 1)
+                                    : handleNext
                             }
                             disabled={processing}
                             className="bg-gradient-to-r from-[#fadb04] to-[#ffe95c] text-black px-10 md:px-14 py-3.5 rounded-full font-black text-sm shadow-[0_10px_20px_rgba(250,219,4,0.3)] hover:shadow-[0_10px_30px_rgba(250,219,4,0.5)] hover:scale-105 transition-all flex items-center gap-2"
@@ -1249,16 +1338,25 @@ export default function FormPendaftaran() {
                             />
 
                             <h2 className="text-xl md:text-2xl font-black text-red-500 uppercase tracking-wider mb-2 relative z-10">
-                                Oops! Ada yang Terlewat
+                                Oops! Ada yang Ditolak
                             </h2>
-                            <p className="text-xs md:text-sm text-white/70 mb-8 relative z-10">
-                                Pendaftaran gagal diproses. Pastikan{" "}
-                                <span className="font-bold text-white">
-                                    Nama Tim
-                                </span>{" "}
-                                dan data penting lainnya sudah terisi dengan
-                                benar di halaman form.
+
+                            <p className="text-xs md:text-sm text-white/70 mb-4 relative z-10">
+                                Server mendeteksi ada data yang kurang sesuai:
                             </p>
+
+                            {/* KOTAK UNTUK MENAMPILKAN PESAN ERROR ASLI DARI LARAVEL */}
+                            {Object.keys(backendErrors).length > 0 && (
+                                <div className="relative z-10 bg-red-500/20 border border-red-500/50 rounded-lg p-3 w-full mb-6 text-left text-xs text-red-200 max-h-32 overflow-y-auto custom-scroll">
+                                    <ul className="list-disc pl-4 space-y-1">
+                                        {Object.values(backendErrors).map(
+                                            (err, idx) => (
+                                                <li key={idx}>{err}</li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
 
                             <button
                                 onClick={() => setSubmitError(false)}
