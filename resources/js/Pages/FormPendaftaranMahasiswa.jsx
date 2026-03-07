@@ -99,7 +99,16 @@ const FileUploadPreview = ({
                         id={id}
                         className="hidden"
                         accept={accept}
-                        onChange={(e) => onFileChange(e.target.files[0])}
+                        onChange={(e) => {
+                            const selectedFile = e.target.files[0];
+                            if (selectedFile) {
+                                // Memanggil fungsi onFileChange, jika kembaliannya false (kebesaran), reset input
+                                const isValid = onFileChange(selectedFile);
+                                if (isValid === false) {
+                                    e.target.value = "";
+                                }
+                            }
+                        }}
                     />
                 </label>
             )}
@@ -115,6 +124,13 @@ export default function FormPendaftaranMahasiswa() {
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [submitError, setSubmitError] = useState(false);
     const [backendErrors, setBackendErrors] = useState({});
+
+    // STATE BARU UNTUK CUSTOM ALERT KEREN
+    const [alertModal, setAlertModal] = useState({
+        show: false,
+        title: "",
+        message: "",
+    });
 
     // Auto-scroll ke atas setiap ganti step
     useEffect(() => {
@@ -156,17 +172,40 @@ export default function FormPendaftaranMahasiswa() {
             surat_rekomendasi: null,
             foto_player_satu: null,
             foto_player_dua: null,
-            // foto_player_tiga: null, // Sesuai revisimu sebelumnya
         },
         payment: {
             bukti_pembayaran: null,
         },
     });
 
+    // ==========================================
+    // FUNGSI CEK UKURAN FILE (MAX 500KB)
+    // ==========================================
+    const checkFileSize = (file) => {
+        // 500 KB = 512000 Bytes
+        if (file && file.size > 512000) {
+            setAlertModal({
+                show: true,
+                title: "UKURAN FILE KEBESARAN!",
+                message: `File "${file.name}" ukurannya lebih dari batas 500 KB. Silakan kompres file Anda terlebih dahulu sebelum di-upload.`,
+            });
+            return false; // Mengembalikan false agar input di-reset
+        }
+        return true;
+    };
+
+    // ==========================================
+    // FUNGSI VALIDASI DENGAN CUSTOM ALERT
+    // ==========================================
     const handleNext = () => {
         if (currentStep === 1) {
             if (!data.nama || !data.logo) {
-                alert("⚠️ NAMA KAMPUS dan LOGO wajib diisi/diupload!");
+                setAlertModal({
+                    show: true,
+                    title: "DATA BELUM LENGKAP",
+                    message:
+                        "Nama Kampus dan Logo Prodi wajib diisi/diupload sebelum melanjutkan!",
+                });
                 return;
             }
         }
@@ -174,9 +213,12 @@ export default function FormPendaftaranMahasiswa() {
             const cap = data.contacts.captain;
             const off = data.contacts.official;
             if (!cap.nama || !cap.no_wa || !off.nama || !off.no_wa) {
-                alert(
-                    "⚠️ Kontak CAPTAIN dan OFFICIAL wajib diisi lengkap! (Capo opsional)",
-                );
+                setAlertModal({
+                    show: true,
+                    title: "KONTAK WAJIB DIISI",
+                    message:
+                        "Kontak CAPTAIN dan OFFICIAL wajib diisi lengkap! (Capo opsional)",
+                });
                 return;
             }
         }
@@ -188,9 +230,11 @@ export default function FormPendaftaranMahasiswa() {
                     p.foto_kartu !== null,
             ).length;
             if (validPlayers < 8) {
-                alert(
-                    `⚠️ Minimal 8 PEMAIN harus diisi datanya secara lengkap (Nama, Pas Foto, & KTM)! Saat ini baru ${validPlayers} pemain yang lengkap.`,
-                );
+                setAlertModal({
+                    show: true,
+                    title: "PEMAIN KURANG DARI 8",
+                    message: `Minimal 8 PEMAIN harus diisi datanya secara lengkap (Nama, Pas Foto, & KTM)! Saat ini baru ${validPlayers} pemain yang lengkap.`,
+                });
                 return;
             }
         }
@@ -200,9 +244,12 @@ export default function FormPendaftaranMahasiswa() {
                     o.nama !== "" && o.pas_foto !== null && o.foto_ktp !== null,
             ).length;
             if (validOfficials < 1) {
-                alert(
-                    "⚠️ Minimal 1 OFFICIAL (Manager/Pelatih) wajib diisi lengkap!",
-                );
+                setAlertModal({
+                    show: true,
+                    title: "OFFICIAL BELUM LENGKAP",
+                    message:
+                        "Minimal 1 OFFICIAL (Manager/Pelatih) wajib diisi lengkap (Nama, Pas Foto, & KTP)!",
+                });
                 return;
             }
         }
@@ -216,13 +263,23 @@ export default function FormPendaftaranMahasiswa() {
                 !docs.foto_player_satu ||
                 !docs.foto_player_dua
             ) {
-                alert("⚠️ SELURUH DOKUMEN dan FOTO PROMOSI wajib diupload!");
+                setAlertModal({
+                    show: true,
+                    title: "DOKUMEN BELUM LENGKAP",
+                    message:
+                        "Seluruh dokumen administrasi dan foto promosi tim wajib diupload sebelum melanjutkan!",
+                });
                 return;
             }
         }
         if (currentStep === 6) {
             if (!data.payment.bukti_pembayaran) {
-                alert("⚠️ BUKTI PEMBAYARAN wajib diupload!");
+                setAlertModal({
+                    show: true,
+                    title: "BUKTI PEMBAYARAN KOSONG",
+                    message:
+                        "Harap upload bukti pembayaran sebelum mereview data tim Anda.",
+                });
                 return;
             }
         }
@@ -272,6 +329,51 @@ export default function FormPendaftaranMahasiswa() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-[#061810]/70 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col w-full h-auto mb-10"
                 >
+                    {/* ========================================== */}
+                    {/* 🚨 KOTAK PERINGATAN GLOBAL (MAX 500KB) */}
+                    {/* ========================================== */}
+                    <div className="mb-8 px-5 py-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex flex-col md:flex-row items-center gap-4 text-center md:text-left shadow-[0_0_20px_rgba(239,68,68,0.1)] relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-red-500 to-orange-500" />
+                        <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0 border border-red-500/30">
+                            <span className="text-2xl animate-pulse">⚠️</span>
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-red-400 font-black uppercase tracking-widest text-sm mb-1">
+                                Perhatian Sebelum Mengisi!
+                            </h4>
+                            <p className="text-white/80 text-xs md:text-sm leading-relaxed">
+                                Maksimal ukuran untuk{" "}
+                                <strong className="text-white">
+                                    SETIAP file unggahan (Gambar, Pas Foto &
+                                    PDF)
+                                </strong>{" "}
+                                adalah{" "}
+                                <strong className="text-[#fadb04] text-base px-1">
+                                    500 KB
+                                </strong>
+                                . Gunakan situs gratis seperti{" "}
+                                <a
+                                    href="https://www.iloveimg.com/id/kompres-gambar"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#00d46a] hover:text-white transition-colors font-bold underline underline-offset-4 decoration-[#00d46a]/50"
+                                >
+                                    iloveimg.com
+                                </a>{" "}
+                                (untuk gambar) atau{" "}
+                                <a
+                                    href="https://www.ilovepdf.com/id/kompres-pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#00d46a] hover:text-white transition-colors font-bold underline underline-offset-4 decoration-[#00d46a]/50"
+                                >
+                                    ilovepdf.com
+                                </a>{" "}
+                                (untuk PDF) untuk mengecilkan ukuran file Anda.
+                            </p>
+                        </div>
+                    </div>
+
                     {/* --- 1. STEPPER --- */}
                     <div className="mb-10 md:mb-12 relative px-2 md:px-6">
                         <div className="relative flex justify-between items-center z-10">
@@ -366,17 +468,19 @@ export default function FormPendaftaranMahasiswa() {
                                             </div>
                                         </div>
 
-                                        {/* Implementasi Preview Logo */}
                                         <div className="pt-2">
                                             <FileUploadPreview
                                                 id="logo-kampus"
-                                                label="Logo Prodi (Max 2MB)"
+                                                label="Logo Prodi"
                                                 helperText="Format: JPG, PNG"
                                                 accept="image/png, image/jpeg, image/jpg"
                                                 file={data.logo}
-                                                onFileChange={(file) =>
-                                                    setData("logo", file)
-                                                }
+                                                onFileChange={(file) => {
+                                                    if (!checkFileSize(file))
+                                                        return false;
+                                                    setData("logo", file);
+                                                    return true;
+                                                }}
                                                 onRemove={() =>
                                                     setData("logo", null)
                                                 }
@@ -552,6 +656,12 @@ export default function FormPendaftaranMahasiswa() {
                                                             onFileChange={(
                                                                 file,
                                                             ) => {
+                                                                if (
+                                                                    !checkFileSize(
+                                                                        file,
+                                                                    )
+                                                                )
+                                                                    return false;
                                                                 const updated =
                                                                     [
                                                                         ...data.players,
@@ -564,6 +674,7 @@ export default function FormPendaftaranMahasiswa() {
                                                                     "players",
                                                                     updated,
                                                                 );
+                                                                return true;
                                                             }}
                                                             onRemove={() => {
                                                                 const updated =
@@ -591,6 +702,12 @@ export default function FormPendaftaranMahasiswa() {
                                                             onFileChange={(
                                                                 file,
                                                             ) => {
+                                                                if (
+                                                                    !checkFileSize(
+                                                                        file,
+                                                                    )
+                                                                )
+                                                                    return false;
                                                                 const updated =
                                                                     [
                                                                         ...data.players,
@@ -603,6 +720,7 @@ export default function FormPendaftaranMahasiswa() {
                                                                     "players",
                                                                     updated,
                                                                 );
+                                                                return true;
                                                             }}
                                                             onRemove={() => {
                                                                 const updated =
@@ -687,6 +805,12 @@ export default function FormPendaftaranMahasiswa() {
                                                                     onFileChange={(
                                                                         file,
                                                                     ) => {
+                                                                        if (
+                                                                            !checkFileSize(
+                                                                                file,
+                                                                            )
+                                                                        )
+                                                                            return false;
                                                                         const updated =
                                                                             [
                                                                                 ...data.officials,
@@ -699,6 +823,7 @@ export default function FormPendaftaranMahasiswa() {
                                                                             "officials",
                                                                             updated,
                                                                         );
+                                                                        return true;
                                                                     }}
                                                                     onRemove={() => {
                                                                         const updated =
@@ -726,6 +851,12 @@ export default function FormPendaftaranMahasiswa() {
                                                                     onFileChange={(
                                                                         file,
                                                                     ) => {
+                                                                        if (
+                                                                            !checkFileSize(
+                                                                                file,
+                                                                            )
+                                                                        )
+                                                                            return false;
                                                                         const updated =
                                                                             [
                                                                                 ...data.officials,
@@ -738,6 +869,7 @@ export default function FormPendaftaranMahasiswa() {
                                                                             "officials",
                                                                             updated,
                                                                         );
+                                                                        return true;
                                                                     }}
                                                                     onRemove={() => {
                                                                         const updated =
@@ -825,7 +957,15 @@ export default function FormPendaftaranMahasiswa() {
                                                                 doc.id
                                                             ]
                                                         }
-                                                        onFileChange={(file) =>
+                                                        onFileChange={(
+                                                            file,
+                                                        ) => {
+                                                            if (
+                                                                !checkFileSize(
+                                                                    file,
+                                                                )
+                                                            )
+                                                                return false;
                                                             setData(
                                                                 "documents",
                                                                 {
@@ -833,8 +973,9 @@ export default function FormPendaftaranMahasiswa() {
                                                                     [doc.id]:
                                                                         file,
                                                                 },
-                                                            )
-                                                        }
+                                                            );
+                                                            return true;
+                                                        }}
                                                         onRemove={() =>
                                                             setData(
                                                                 "documents",
@@ -905,7 +1046,13 @@ export default function FormPendaftaranMahasiswa() {
                                                             }
                                                             onFileChange={(
                                                                 file,
-                                                            ) =>
+                                                            ) => {
+                                                                if (
+                                                                    !checkFileSize(
+                                                                        file,
+                                                                    )
+                                                                )
+                                                                    return false;
                                                                 setData(
                                                                     "documents",
                                                                     {
@@ -913,8 +1060,9 @@ export default function FormPendaftaranMahasiswa() {
                                                                         [playerDoc.id]:
                                                                             file,
                                                                     },
-                                                                )
-                                                            }
+                                                                );
+                                                                return true;
+                                                            }}
                                                             onRemove={() =>
                                                                 setData(
                                                                     "documents",
@@ -968,12 +1116,17 @@ export default function FormPendaftaranMahasiswa() {
                                                         data.payment
                                                             .bukti_pembayaran
                                                     }
-                                                    onFileChange={(file) =>
+                                                    onFileChange={(file) => {
+                                                        if (
+                                                            !checkFileSize(file)
+                                                        )
+                                                            return false;
                                                         setData("payment", {
                                                             bukti_pembayaran:
                                                                 file,
-                                                        })
-                                                    }
+                                                        });
+                                                        return true;
+                                                    }}
                                                     onRemove={() =>
                                                         setData("payment", {
                                                             bukti_pembayaran:
@@ -1229,6 +1382,67 @@ export default function FormPendaftaranMahasiswa() {
                     </div>
                 </motion.div>
             </main>
+
+            {/* ========================================== */}
+            {/* 🚨 CUSTOM ALERT MODAL (FILE OVERSIZE / VALIDASI) */}
+            {/* ========================================== */}
+            <AnimatePresence>
+                {alertModal.show && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                            transition={{
+                                type: "spring",
+                                bounce: 0.5,
+                                duration: 0.5,
+                            }}
+                            className="bg-[#05140d] border border-red-500/50 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_10px_50px_rgba(239,68,68,0.2)] relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-red-500/10 blur-[50px] rounded-full pointer-events-none" />
+
+                            <motion.div
+                                animate={{ rotate: [-5, 5, -5] }}
+                                transition={{
+                                    duration: 0.5,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                }}
+                                className="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-5 relative z-10 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                            >
+                                <span className="text-4xl">⚠️</span>
+                            </motion.div>
+
+                            <h3 className="text-xl font-black text-red-500 uppercase tracking-widest mb-3 relative z-10">
+                                {alertModal.title}
+                            </h3>
+
+                            <p className="text-sm text-white/80 mb-8 relative z-10 leading-relaxed">
+                                {alertModal.message}
+                            </p>
+
+                            <button
+                                onClick={() =>
+                                    setAlertModal({
+                                        show: false,
+                                        title: "",
+                                        message: "",
+                                    })
+                                }
+                                className="bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-3 rounded-full font-bold text-sm shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-transform w-full relative z-10 uppercase tracking-widest"
+                            >
+                                Mengerti
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* MODAL SUCCESS */}
             <AnimatePresence>

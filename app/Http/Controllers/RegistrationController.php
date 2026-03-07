@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Models; 
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -11,8 +9,29 @@ use Illuminate\Support\Facades\Storage;
 
 class RegistrationController extends Controller
 {
-  public function store(Request $request)
+    public function store(Request $request)
     {
+        // ==========================================
+        // 🛡️ LAPISAN KEAMANAN: VALIDASI UKURAN FILE (MAX 500KB)
+        // ==========================================
+        $request->validate([
+            'logo'                       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'players.*.pas_foto'         => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'players.*.foto_kartu'       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'officials.*.pas_foto'       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'officials.*.foto_ktp'       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'documents.foto_tim_berjersey'=> 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'documents.foto_jersey_pemain'=> 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'documents.foto_jersey_kiper' => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'documents.surat_rekomendasi' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:500',
+            'documents.foto_player_satu'  => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'documents.foto_player_dua'   => 'nullable|file|mimes:jpeg,png,jpg|max:500',
+            'payment.bukti_pembayaran'    => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:500',
+        ], [
+            'max'   => 'Gagal! Ada file unggahan yang ukurannya melebihi batas 500 KB. Silakan kompres gambar Anda terlebih dahulu.',
+            'mimes' => 'Format file harus berupa JPG, JPEG, PNG, atau PDF.',
+        ]);
+
         DB::beginTransaction();
 
         try {

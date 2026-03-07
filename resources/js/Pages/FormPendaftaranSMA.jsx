@@ -9,6 +9,13 @@ export default function FormPendaftaran() {
     const [submitError, setSubmitError] = useState(false);
     const [backendErrors, setBackendErrors] = useState({});
 
+    // STATE BARU UNTUK CUSTOM ALERT KEREN
+    const [alertModal, setAlertModal] = useState({
+        show: false,
+        title: "",
+        message: "",
+    });
+
     // Auto-scroll ke atas setiap ganti step
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -49,7 +56,6 @@ export default function FormPendaftaran() {
             surat_rekomendasi: null,
             foto_player_satu: null,
             foto_player_dua: null,
-            foto_player_tiga: null,
         },
         payment: {
             bukti_pembayaran: null,
@@ -57,32 +63,54 @@ export default function FormPendaftaran() {
     });
 
     // ==========================================
-    // FUNGSI VALIDASI SETIAP STEP
+    // FUNGSI CEK UKURAN FILE DENGAN CUSTOM ALERT
+    // ==========================================
+    const checkFileSize = (e) => {
+        const file = e.target.files[0];
+        // 500 KB = 512000 Bytes
+        if (file && file.size > 512000) {
+            setAlertModal({
+                show: true,
+                title: "UKURAN FILE KEBESARAN!",
+                message: `File "${file.name}" ukurannya lebih dari batas 500 KB. Silakan kompres gambar Anda terlebih dahulu (misal via iloveimg.com) sebelum di-upload.`,
+            });
+            e.target.value = "";
+            return false;
+        }
+        return true;
+    };
+
+    // ==========================================
+    // FUNGSI VALIDASI DENGAN CUSTOM ALERT
     // ==========================================
     const handleNext = () => {
-        // Validasi Step 1: Tim
         if (currentStep === 1) {
             if (!data.nama || !data.logo) {
-                alert("⚠️ NAMA TIM dan LOGO wajib diisi/diupload!");
-                return; // Menghentikan eksekusi, user tidak bisa next
-            }
-        }
-
-        // Validasi Step 2: Kontak
-        if (currentStep === 2) {
-            const cap = data.contacts.captain;
-            const off = data.contacts.official;
-            if (!cap.nama || !cap.no_wa || !off.nama || !off.no_wa) {
-                alert(
-                    "⚠️ Kontak CAPTAIN dan OFFICIAL wajib diisi lengkap! (Capo opsional)",
-                );
+                setAlertModal({
+                    show: true,
+                    title: "DATA BELUM LENGKAP",
+                    message:
+                        "Nama Tim dan Logo wajib diisi/diupload sebelum melanjutkan!",
+                });
                 return;
             }
         }
 
-        // Validasi Step 3: Pemain (Minimal 8 Lengkap)
+        if (currentStep === 2) {
+            const cap = data.contacts.captain;
+            const off = data.contacts.official;
+            if (!cap.nama || !cap.no_wa || !off.nama || !off.no_wa) {
+                setAlertModal({
+                    show: true,
+                    title: "KONTAK WAJIB DIISI",
+                    message:
+                        "Kontak CAPTAIN dan OFFICIAL wajib diisi lengkap! (Capo opsional)",
+                });
+                return;
+            }
+        }
+
         if (currentStep === 3) {
-            // Hitung berapa pemain yang datanya diisi lengkap (Nama + Pas Foto + Kartu Pelajar/KTM)
             const validPlayers = data.players.filter(
                 (p) =>
                     p.nama !== "" &&
@@ -91,14 +119,15 @@ export default function FormPendaftaran() {
             ).length;
 
             if (validPlayers < 8) {
-                alert(
-                    `⚠️ Minimal 8 PEMAIN harus diisi datanya secara lengkap (Nama, Pas Foto, & Kartu)! Saat ini baru ${validPlayers} pemain yang lengkap.`,
-                );
+                setAlertModal({
+                    show: true,
+                    title: "PEMAIN KURANG DARI 8",
+                    message: `Minimal 8 PEMAIN harus diisi datanya secara lengkap (Nama, Pas Foto, & Kartu)! Saat ini baru ${validPlayers} pemain yang lengkap.`,
+                });
                 return;
             }
         }
 
-        // Validasi Step 4: Official (Minimal 1 Lengkap)
         if (currentStep === 4) {
             const validOfficials = data.officials.filter(
                 (o) =>
@@ -106,14 +135,16 @@ export default function FormPendaftaran() {
             ).length;
 
             if (validOfficials < 1) {
-                alert(
-                    "⚠️ Minimal 1 OFFICIAL (Manager/Pelatih) wajib diisi lengkap (Nama, Pas Foto, & KTP)!",
-                );
+                setAlertModal({
+                    show: true,
+                    title: "OFFICIAL BELUM LENGKAP",
+                    message:
+                        "Minimal 1 OFFICIAL (Manager/Pelatih) wajib diisi lengkap (Nama, Pas Foto, & KTP)!",
+                });
                 return;
             }
         }
 
-        // Validasi Step 5: Dokumen (Semua Wajib)
         if (currentStep === 5) {
             const docs = data.documents;
             if (
@@ -122,25 +153,30 @@ export default function FormPendaftaran() {
                 !docs.foto_jersey_kiper ||
                 !docs.surat_rekomendasi ||
                 !docs.foto_player_satu ||
-                !docs.foto_player_dua ||
-                !docs.foto_player_tiga
+                !docs.foto_player_dua
             ) {
-                alert(
-                    "⚠️ SELURUH DOKUMEN dan FOTO PROMOSI (Total 7 File) wajib diupload sebelum melanjutkan!",
-                );
+                setAlertModal({
+                    show: true,
+                    title: "DOKUMEN BELUM LENGKAP",
+                    message:
+                        "Seluruh dokumen dan foto promosi (Total 7 File) wajib diupload sebelum melanjutkan!",
+                });
                 return;
             }
         }
 
-        // Validasi Step 6: Payment
         if (currentStep === 6) {
             if (!data.payment.bukti_pembayaran) {
-                alert("⚠️ BUKTI PEMBAYARAN wajib diupload!");
+                setAlertModal({
+                    show: true,
+                    title: "BUKTI PEMBAYARAN KOSONG",
+                    message:
+                        "Harap upload bukti pembayaran sebelum mereview data tim Anda.",
+                });
                 return;
             }
         }
 
-        // Jika lolos semua validasi di atas, barulah pindah ke step selanjutnya
         setCurrentStep(currentStep + 1);
     };
 
@@ -160,11 +196,9 @@ export default function FormPendaftaran() {
     };
 
     return (
-        // 1. Ubah h-[100dvh] dan overflow-hidden menjadi min-h-screen agar bisa memanjang ke bawah
         <div className="min-h-screen bg-[#020d08] text-white font-sans relative flex flex-col pb-12">
             <Head title="Pendaftaran SMA | FIX CUP 7.0" />
 
-            {/* BACKGROUND AMBIENCE (Fixed agar ngikutin saat di-scroll) */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-[#009b3a]/20 blur-[150px] rounded-full" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#fadb04]/10 blur-[150px] rounded-full" />
@@ -172,9 +206,7 @@ export default function FormPendaftaran() {
 
             <Navbar />
 
-            {/* MAIN: Diberi pt-32 agar turun ke bawah navbar */}
             <main className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 pt-28 md:pt-32 flex flex-col">
-                {/* HEADER COMPACT */}
                 <div className="text-center mb-6">
                     <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#fadb04] to-[#ffea6e] uppercase tracking-wide drop-shadow-lg">
                         Pendaftaran FIX CUP 7.0
@@ -184,12 +216,50 @@ export default function FormPendaftaran() {
                     </p>
                 </div>
 
-                {/* CARD: Dibuang batasan flex-1 dan min-h-0 agar tingginya bebas mengikuti isi konten */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-[#061810]/70 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col w-full h-auto mb-10"
                 >
+                    {/* ========================================== */}
+                    {/* 🚨 KOTAK PERINGATAN GLOBAL (MAX 500KB) */}
+                    {/* ========================================== */}
+                    <div className="mb-8 px-5 py-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex flex-col md:flex-row items-center gap-4 text-center md:text-left shadow-[0_0_20px_rgba(239,68,68,0.1)] relative overflow-hidden">
+                        {/* Garis merah estetik di sebelah kiri */}
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-red-500 to-orange-500" />
+
+                        <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0 border border-red-500/30">
+                            <span className="text-2xl animate-pulse">⚠️</span>
+                        </div>
+
+                        <div className="flex-1">
+                            <h4 className="text-red-400 font-black uppercase tracking-widest text-sm mb-1">
+                                Perhatian Sebelum Mengisi!
+                            </h4>
+                            <p className="text-white/80 text-xs md:text-sm leading-relaxed">
+                                Maksimal ukuran untuk{" "}
+                                <strong className="text-white">
+                                    SETIAP file unggahan (Gambar, Pas Foto &
+                                    PDF)
+                                </strong>{" "}
+                                adalah{" "}
+                                <strong className="text-[#fadb04] text-base px-1">
+                                    500 KB
+                                </strong>
+                                . Gunakan situs gratis seperti{" "}
+                                <a
+                                    href="https://www.iloveimg.com/id/kompres-gambar"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#00d46a] hover:text-white transition-colors font-bold underline underline-offset-4 decoration-[#00d46a]/50"
+                                >
+                                    iloveimg.com
+                                </a>{" "}
+                                untuk mengecilkan ukuran file Anda jika terlalu
+                                besar.
+                            </p>
+                        </div>
+                    </div>
                     {/* --- 1. STEPPER --- */}
                     <div className="mb-10 md:mb-12 relative px-2 md:px-6">
                         <div className="relative flex justify-between items-center z-10">
@@ -228,7 +298,6 @@ export default function FormPendaftaran() {
                     </div>
 
                     {/* --- 2. FORM CONTENT --- */}
-                    {/* Dibuang class overflow-y-auto, sekarang div ini membesar mengikuti form */}
                     <div className="w-full">
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -289,20 +358,22 @@ export default function FormPendaftaran() {
                                             <label className="text-xs font-bold text-[#00d46a] uppercase tracking-wider ml-1">
                                                 Logo Tim / Sekolah{" "}
                                                 <span className="text-white/40 font-normal">
-                                                    (Max 2MB)
+                                                    (Max 200KB)
                                                 </span>
                                             </label>
                                             <input
                                                 type="file"
                                                 id="logo"
                                                 className="hidden"
-                                                onChange={(e) =>
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    if (!checkFileSize(e))
+                                                        return;
                                                     setData(
                                                         "logo",
                                                         e.target.files[0],
-                                                    )
-                                                }
-                                                accept="image/*"
+                                                    );
+                                                }}
                                             />
                                             <label
                                                 htmlFor="logo"
@@ -501,6 +572,12 @@ export default function FormPendaftaran() {
                                                                 onChange={(
                                                                     e,
                                                                 ) => {
+                                                                    if (
+                                                                        !checkFileSize(
+                                                                            e,
+                                                                        )
+                                                                    )
+                                                                        return;
                                                                     const updated =
                                                                         [
                                                                             ...data.players,
@@ -526,6 +603,12 @@ export default function FormPendaftaran() {
                                                                 onChange={(
                                                                     e,
                                                                 ) => {
+                                                                    if (
+                                                                        !checkFileSize(
+                                                                            e,
+                                                                        )
+                                                                    )
+                                                                        return;
                                                                     const updated =
                                                                         [
                                                                             ...data.players,
@@ -605,6 +688,12 @@ export default function FormPendaftaran() {
                                                                     onChange={(
                                                                         e,
                                                                     ) => {
+                                                                        if (
+                                                                            !checkFileSize(
+                                                                                e,
+                                                                            )
+                                                                        )
+                                                                            return;
                                                                         const updated =
                                                                             [
                                                                                 ...data.officials,
@@ -631,6 +720,12 @@ export default function FormPendaftaran() {
                                                                     onChange={(
                                                                         e,
                                                                     ) => {
+                                                                        if (
+                                                                            !checkFileSize(
+                                                                                e,
+                                                                            )
+                                                                        )
+                                                                            return;
                                                                         const updated =
                                                                             [
                                                                                 ...data.officials,
@@ -667,7 +762,6 @@ export default function FormPendaftaran() {
                                             </p>
                                         </div>
 
-                                        {/* --- BAGIAN 1: BERKAS UTAMA --- */}
                                         <div className="space-y-4">
                                             <div className="border-b border-white/10 pb-2 mb-4">
                                                 <h3 className="text-sm font-bold text-[#00d46a] uppercase tracking-widest">
@@ -711,7 +805,13 @@ export default function FormPendaftaran() {
                                                             type="file"
                                                             id={doc.id}
                                                             className="hidden"
-                                                            onChange={(e) =>
+                                                            onChange={(e) => {
+                                                                if (
+                                                                    !checkFileSize(
+                                                                        e,
+                                                                    )
+                                                                )
+                                                                    return;
                                                                 setData(
                                                                     "documents",
                                                                     {
@@ -721,8 +821,8 @@ export default function FormPendaftaran() {
                                                                                 .target
                                                                                 .files[0],
                                                                     },
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         />
                                                         <label
                                                             htmlFor={doc.id}
@@ -747,22 +847,18 @@ export default function FormPendaftaran() {
                                             </div>
                                         </div>
 
-                                        {/* --- BAGIAN 2: FOTO PROMOSI (3 ORANG) --- */}
                                         <div className="space-y-4 pt-4">
                                             <div className="border-b border-white/10 pb-2 mb-4">
                                                 <h3 className="text-sm font-bold text-[#00d46a] uppercase tracking-widest">
                                                     2. Foto Promosi Player
                                                 </h3>
                                             </div>
-
                                             <div className="flex flex-col md:flex-row gap-6">
-                                                {/* KOTAK CONTOH FOTO */}
                                                 <div className="w-full md:w-1/3 bg-gradient-to-b from-white/10 to-transparent border border-white/10 rounded-2xl p-4 text-center shrink-0 flex flex-col justify-center">
                                                     <p className="text-xs font-black text-[#fadb04] uppercase mb-3 tracking-widest">
                                                         Contoh Foto 3 Orang
                                                     </p>
                                                     <div className="w-full aspect-[4/5] bg-black/50 rounded-xl overflow-hidden border border-white/20 relative shadow-lg">
-                                                        {/* PASTIKAN KAMU MENARUH GAMBAR CONTOH DI FOLDER public/images/ */}
                                                         <img
                                                             src="/images/daffa.jpeg"
                                                             alt="Contoh Pose"
@@ -775,8 +871,6 @@ export default function FormPendaftaran() {
                                                         kesayangan kalian.
                                                     </p>
                                                 </div>
-
-                                                {/* INPUT FOTO PLAYER 1, 2, 3 */}
                                                 <div className="flex-1 flex flex-col gap-4 justify-center">
                                                     {[
                                                         {
@@ -787,11 +881,7 @@ export default function FormPendaftaran() {
                                                             id: "foto_player_dua",
                                                             label: "Foto Player Dua",
                                                         },
-                                                        {
-                                                            id: "foto_player_tiga",
-                                                            label: "Foto Player Tiga",
-                                                        },
-                                                    ].map((playerDoc, idx) => (
+                                                    ].map((playerDoc) => (
                                                         <div
                                                             key={playerDoc.id}
                                                             className="bg-black/20 border border-white/10 rounded-xl p-4 hover:border-[#00d46a]/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
@@ -817,7 +907,13 @@ export default function FormPendaftaran() {
                                                                     accept="image/png, image/jpeg, image/jpg"
                                                                     onChange={(
                                                                         e,
-                                                                    ) =>
+                                                                    ) => {
+                                                                        if (
+                                                                            !checkFileSize(
+                                                                                e,
+                                                                            )
+                                                                        )
+                                                                            return;
                                                                         setData(
                                                                             "documents",
                                                                             {
@@ -827,8 +923,8 @@ export default function FormPendaftaran() {
                                                                                         .target
                                                                                         .files[0],
                                                                             },
-                                                                        )
-                                                                    }
+                                                                        );
+                                                                    }}
                                                                 />
                                                                 <label
                                                                     htmlFor={
@@ -871,7 +967,6 @@ export default function FormPendaftaran() {
                                             <h2 className="text-5xl font-black text-white mb-8">
                                                 Rp 350.000
                                             </h2>
-
                                             <div className="bg-black/40 p-6 rounded-2xl border border-white/5 mb-8">
                                                 <p className="text-base text-white/60 mb-2">
                                                     Transfer ke Bank Mandiri
@@ -883,18 +978,19 @@ export default function FormPendaftaran() {
                                                     A.N. PANITIA FIX CUP 7.0
                                                 </p>
                                             </div>
-
                                             <input
                                                 type="file"
                                                 id="pay"
                                                 className="hidden"
                                                 accept="image/*"
-                                                onChange={(e) =>
+                                                onChange={(e) => {
+                                                    if (!checkFileSize(e))
+                                                        return;
                                                     setData("payment", {
                                                         bukti_pembayaran:
                                                             e.target.files[0],
-                                                    })
-                                                }
+                                                    });
+                                                }}
                                             />
                                             <label
                                                 htmlFor="pay"
@@ -922,7 +1018,6 @@ export default function FormPendaftaran() {
                                 {/* STEP 7: REVIEW */}
                                 {currentStep === 7 &&
                                     (() => {
-                                        // Susun array data untuk tabel review secara otomatis
                                         const reviewRows = [
                                             {
                                                 label: "Nama Tim",
@@ -963,7 +1058,6 @@ export default function FormPendaftaran() {
                                             },
                                         ];
 
-                                        // Masukkan data pemain (hanya yang sudah diisi sebagian/penuh)
                                         data.players.forEach((p, i) => {
                                             if (
                                                 p.nama ||
@@ -987,7 +1081,6 @@ export default function FormPendaftaran() {
                                             }
                                         });
 
-                                        // Masukkan data official (hanya yang sudah diisi sebagian/penuh)
                                         data.officials.forEach((o, i) => {
                                             if (
                                                 o.nama ||
@@ -995,23 +1088,22 @@ export default function FormPendaftaran() {
                                                 o.foto_ktp
                                             ) {
                                                 reviewRows.push({
-                                                    label: `Official Pelatih/Manager ${i + 1} - Nama`,
+                                                    label: `Official ${i + 1} - Nama`,
                                                     value: o.nama,
                                                 });
                                                 reviewRows.push({
-                                                    label: `Official Pelatih/Manager ${i + 1} - Pas Foto`,
+                                                    label: `Official ${i + 1} - Pas Foto`,
                                                     value: o.pas_foto?.name,
                                                     isFile: true,
                                                 });
                                                 reviewRows.push({
-                                                    label: `Official Pelatih/Manager ${i + 1} - KTP`,
+                                                    label: `Official ${i + 1} - KTP`,
                                                     value: o.foto_ktp?.name,
                                                     isFile: true,
                                                 });
                                             }
                                         });
 
-                                        // Masukkan semua data file dokumen & pembayaran
                                         reviewRows.push(
                                             {
                                                 label: "Foto Tim Berjersey",
@@ -1044,12 +1136,6 @@ export default function FormPendaftaran() {
                                                 isFile: true,
                                             },
                                             {
-                                                label: "Foto Player Tiga",
-                                                value: data.documents
-                                                    .foto_player_tiga?.name,
-                                                isFile: true,
-                                            },
-                                            {
                                                 label: "Surat Rekomendasi",
                                                 value: data.documents
                                                     .surat_rekomendasi?.name,
@@ -1065,7 +1151,6 @@ export default function FormPendaftaran() {
 
                                         return (
                                             <div className="space-y-8 max-w-4xl mx-auto">
-                                                {/* HEADER INFO */}
                                                 <div className="bg-[#fadb04]/10 border border-[#fadb04]/30 rounded-3xl p-6 md:p-8 text-center shadow-[0_0_20px_rgba(250,219,4,0.05)]">
                                                     <div className="w-16 h-16 bg-[#fadb04] rounded-full flex items-center justify-center mx-auto mb-4 text-black text-2xl shadow-[0_0_15px_rgba(250,219,4,0.5)]">
                                                         ✨
@@ -1081,10 +1166,7 @@ export default function FormPendaftaran() {
                                                         setelah dikirim.
                                                     </p>
                                                 </div>
-
-                                                {/* TABEL REVIEW */}
                                                 <div className="bg-[#05140d] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                                                    {/* Kolom Judul Tabel */}
                                                     <div className="grid grid-cols-1 md:grid-cols-3 bg-white/10 p-4 font-black text-[#fadb04] text-sm uppercase tracking-wider border-b border-white/10">
                                                         <div className="col-span-1 hidden md:block">
                                                             Label
@@ -1096,8 +1178,6 @@ export default function FormPendaftaran() {
                                                             Rincian Seluruh Data
                                                         </div>
                                                     </div>
-
-                                                    {/* Baris Isi Tabel */}
                                                     <div className="divide-y divide-white/5 text-sm">
                                                         {reviewRows.map(
                                                             (row, idx) => (
@@ -1154,7 +1234,6 @@ export default function FormPendaftaran() {
                         >
                             ← Kembali
                         </button>
-
                         <button
                             onClick={
                                 currentStep === steps.length
@@ -1177,7 +1256,70 @@ export default function FormPendaftaran() {
                 </motion.div>
             </main>
 
-            {/* SCROLLBAR UNTUK BROWSER KESELURUHAN */}
+            {/* ========================================== */}
+            {/* 🚨 CUSTOM ALERT MODAL (FILE OVERSIZE / VALIDASI) */}
+            {/* ========================================== */}
+            <AnimatePresence>
+                {alertModal.show && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                            transition={{
+                                type: "spring",
+                                bounce: 0.5,
+                                duration: 0.5,
+                            }}
+                            className="bg-[#05140d] border border-red-500/50 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_10px_50px_rgba(239,68,68,0.2)] relative overflow-hidden"
+                        >
+                            {/* Decorative Background Glow */}
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-red-500/10 blur-[50px] rounded-full pointer-events-none" />
+
+                            {/* Warning Icon Animasi */}
+                            <motion.div
+                                animate={{ rotate: [-5, 5, -5] }}
+                                transition={{
+                                    duration: 0.5,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                }}
+                                className="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-5 relative z-10 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                            >
+                                <span className="text-4xl">⚠️</span>
+                            </motion.div>
+
+                            <h3 className="text-xl font-black text-red-500 uppercase tracking-widest mb-3 relative z-10">
+                                {alertModal.title}
+                            </h3>
+
+                            <p className="text-sm text-white/80 mb-8 relative z-10 leading-relaxed">
+                                {alertModal.message}
+                            </p>
+
+                            <button
+                                onClick={() =>
+                                    setAlertModal({
+                                        show: false,
+                                        title: "",
+                                        message: "",
+                                    })
+                                }
+                                className="bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-3 rounded-full font-bold text-sm shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-transform w-full relative z-10 uppercase tracking-widest"
+                            >
+                                Mengerti
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL SUCCESS Bawaan */}
             <AnimatePresence>
                 {submitSuccess && (
                     <motion.div
@@ -1186,7 +1328,6 @@ export default function FormPendaftaran() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020d08]/90 backdrop-blur-xl overflow-hidden"
                     >
-                        {/* Efek Cahaya Berputar di Belakang */}
                         <motion.div
                             animate={{
                                 scale: [1, 1.2, 1],
@@ -1199,8 +1340,6 @@ export default function FormPendaftaran() {
                             }}
                             className="absolute w-[600px] h-[600px] md:w-[800px] md:h-[800px] bg-gradient-to-r from-[#fadb04]/20 via-[#00d46a]/20 to-[#002776]/20 blur-[100px] rounded-full pointer-events-none"
                         />
-
-                        {/* Partikel Berterbangan ala E-Sport */}
                         {[...Array(30)].map((_, i) => (
                             <motion.div
                                 key={i}
@@ -1233,12 +1372,10 @@ export default function FormPendaftaran() {
                                     clipPath:
                                         i % 2 === 0
                                             ? "polygon(50% 0%, 0% 100%, 100% 100%)"
-                                            : "circle(50% at 50% 50%)", // Campuran bentuk segitiga dan lingkaran
+                                            : "circle(50% at 50% 50%)",
                                 }}
                             />
                         ))}
-
-                        {/* Konten Utama Pop-up */}
                         <motion.div
                             initial={{ scale: 0.5, y: 150, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -1249,9 +1386,8 @@ export default function FormPendaftaran() {
                             }}
                             className="relative flex flex-col items-center z-10 text-center px-4"
                         >
-                            {/* MASKOT / LOGO MUNCUL DARI BAWAH */}
                             <motion.img
-                                src="/images/maskot2.png" // <--- GANTI NAMA FILE INI SESUAI MASKOT KAMU DI FOLDER PUBLIC
+                                src="/images/maskot2.png"
                                 alt="Mascot Sukses"
                                 initial={{ y: -20 }}
                                 animate={{ y: [0, -30, 0] }}
@@ -1262,8 +1398,6 @@ export default function FormPendaftaran() {
                                 }}
                                 className="w-56 md:w-80 drop-shadow-[0_20px_50px_rgba(250,219,4,0.6)] mb-6 z-20"
                             />
-
-                            {/* Teks Sukses */}
                             <motion.div
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
@@ -1280,8 +1414,6 @@ export default function FormPendaftaran() {
                                     Resmi Terdaftar ke Arena!
                                 </p>
                             </motion.div>
-
-                            {/* Tombol Kembali ke Beranda */}
                             <motion.a
                                 href="/"
                                 whileHover={{
@@ -1302,6 +1434,7 @@ export default function FormPendaftaran() {
                 )}
             </AnimatePresence>
 
+            {/* MODAL ERROR Bawaan */}
             <AnimatePresence>
                 {submitError && (
                     <motion.div
@@ -1321,12 +1454,9 @@ export default function FormPendaftaran() {
                             }}
                             className="bg-[#05140d] border border-red-500/30 rounded-3xl p-8 max-w-md w-full text-center shadow-[0_10px_40px_rgba(239,68,68,0.1)] flex flex-col items-center relative overflow-hidden"
                         >
-                            {/* Cahaya merah tipis di background */}
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-red-500/10 blur-[50px] rounded-full pointer-events-none" />
-
-                            {/* Maskot - Animasi mengambang pelan (biasa aja) */}
                             <motion.img
-                                src="/images/maskot5.png" // Pastikan nama filenya sama
+                                src="/images/maskot5.png"
                                 alt="Mascot Peringatan"
                                 animate={{ y: [-3, 3, -3] }}
                                 transition={{
@@ -1336,16 +1466,12 @@ export default function FormPendaftaran() {
                                 }}
                                 className="w-28 md:w-36 drop-shadow-lg mb-5 opacity-90 relative z-10 grayscale-[30%]"
                             />
-
                             <h2 className="text-xl md:text-2xl font-black text-red-500 uppercase tracking-wider mb-2 relative z-10">
                                 Oops! Ada yang Ditolak
                             </h2>
-
                             <p className="text-xs md:text-sm text-white/70 mb-4 relative z-10">
                                 Server mendeteksi ada data yang kurang sesuai:
                             </p>
-
-                            {/* KOTAK UNTUK MENAMPILKAN PESAN ERROR ASLI DARI LARAVEL */}
                             {Object.keys(backendErrors).length > 0 && (
                                 <div className="relative z-10 bg-red-500/20 border border-red-500/50 rounded-lg p-3 w-full mb-6 text-left text-xs text-red-200 max-h-32 overflow-y-auto custom-scroll">
                                     <ul className="list-disc pl-4 space-y-1">
@@ -1357,7 +1483,6 @@ export default function FormPendaftaran() {
                                     </ul>
                                 </div>
                             )}
-
                             <button
                                 onClick={() => setSubmitError(false)}
                                 className="bg-white/5 hover:bg-white/10 text-white px-8 py-3 rounded-full font-bold text-xs md:text-sm transition-all border border-white/10 relative z-10"
