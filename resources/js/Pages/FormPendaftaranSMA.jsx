@@ -9,7 +9,6 @@ export default function FormPendaftaran() {
     const [submitError, setSubmitError] = useState(false);
     const [backendErrors, setBackendErrors] = useState({});
 
-    // STATE BARU UNTUK CUSTOM ALERT KEREN
     const [alertModal, setAlertModal] = useState({
         show: false,
         title: "",
@@ -31,7 +30,7 @@ export default function FormPendaftaran() {
         "Review",
     ];
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, progress, errors } = useForm({
         nama: "",
         kategori: "SMA",
         logo: null,
@@ -65,19 +64,35 @@ export default function FormPendaftaran() {
     // ==========================================
     // FUNGSI CEK UKURAN FILE DENGAN CUSTOM ALERT
     // ==========================================
-    const checkFileSize = (e) => {
-        const file = e.target.files[0];
-        // 500 KB = 512000 Bytes
-        if (file && file.size > 512000) {
+    // ==========================================
+    // FUNGSI CEK UKURAN FILE (SUPER FLEKSIBEL)
+    // ==========================================
+    const checkFileSize = (fileOrEvent) => {
+        // Deteksi cerdas: Apakah ini Event (e.target.files) atau langsung file?
+        const file = fileOrEvent?.target?.files
+            ? fileOrEvent.target.files[0]
+            : fileOrEvent;
+
+        // Jika tidak ada file (misal user batal memilih), hentikan proses
+        if (!file) return false;
+
+        // Cek ukuran: 500 KB = 512000 Bytes
+        if (file.size > 512000) {
             setAlertModal({
                 show: true,
                 title: "UKURAN FILE KEBESARAN!",
-                message: `File "${file.name}" ukurannya lebih dari batas 500 KB. Silakan kompres gambar Anda terlebih dahulu (misal via iloveimg.com) sebelum di-upload.`,
+                message: `File "${file.name}" ukurannya lebih dari batas 500 KB. Silakan kompres file Anda terlebih dahulu sebelum di-upload.`,
             });
-            e.target.value = "";
-            return false;
+
+            // Jika asalnya dari input file biasa, kosongkan value-nya
+            if (fileOrEvent?.target) {
+                fileOrEvent.target.value = "";
+            }
+
+            return false; // Gagal validasi
         }
-        return true;
+
+        return true; // Lulus validasi
     };
 
     // ==========================================
@@ -193,6 +208,115 @@ export default function FormPendaftaran() {
                 setSubmitError(true);
             },
         });
+    };
+    // =================================================================
+    // 1. KOMPONEN REUSABLE: PREVIEW FILE (Gambar & PDF)
+    // =================================================================
+    const FileUploadPreview = ({
+        label,
+        helperText,
+        accept,
+        file,
+        onFileChange,
+        onRemove,
+        id,
+    }) => {
+        const getPreviewUrl = () => {
+            if (!file) return null;
+            // Hanya buat preview URL jika file adalah gambar
+            if (file.type.startsWith("image/")) {
+                return URL.createObjectURL(file);
+            }
+            return null;
+        };
+
+        const isImage = file && file.type.startsWith("image/");
+
+        return (
+            <div className="flex flex-col bg-white/5 p-4 rounded-xl border border-dashed border-white/20 hover:border-[#00d46a]/50 transition-all h-full">
+                <label className="text-[11px] text-white/60 mb-3 font-bold uppercase tracking-wider">
+                    {label}
+                </label>
+
+                {file ? (
+                    <div className="relative flex flex-col items-center justify-center bg-black/40 rounded-lg p-3 h-32 group overflow-hidden border border-white/10">
+                        {isImage ? (
+                            <img
+                                src={getPreviewUrl()}
+                                alt={`Preview ${label}`}
+                                className="h-full w-auto object-contain rounded drop-shadow-md"
+                            />
+                        ) : (
+                            <div className="flex flex-col items-center text-white/70">
+                                <svg
+                                    className="w-10 h-10 mb-2 text-red-500"
+                                    fill="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.857 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.642z" />
+                                </svg>
+                                <span className="text-[10px] font-bold">
+                                    Dokumen Terpilih
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center rounded-lg p-2">
+                            <p className="text-[9px] text-white truncate w-full text-center mb-2">
+                                {file.name}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={onRemove}
+                                className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-full shadow-lg"
+                            >
+                                Hapus File
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <label
+                        htmlFor={id}
+                        className="flex flex-col items-center justify-center h-32 bg-black/20 rounded-lg cursor-pointer hover:bg-[#fadb04]/5 group border border-transparent"
+                    >
+                        <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform text-[#fadb04]">
+                            <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                            </svg>
+                        </div>
+                        <span className="text-[11px] font-semibold text-white/50 group-hover:text-white">
+                            Pilih File
+                        </span>
+                        <span className="text-[9px] text-white/30 mt-1 text-center px-2">
+                            {helperText}
+                        </span>
+                        <input
+                            type="file"
+                            id={id}
+                            className="hidden"
+                            accept={accept}
+                            onChange={(e) => {
+                                const selectedFile = e.target.files[0];
+                                if (selectedFile) {
+                                    const isValid = onFileChange(selectedFile);
+                                    if (isValid === false) e.target.value = "";
+                                }
+                            }}
+                        />
+                    </label>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -856,11 +980,11 @@ export default function FormPendaftaran() {
                                             <div className="flex flex-col md:flex-row gap-6">
                                                 <div className="w-full md:w-1/3 bg-gradient-to-b from-white/10 to-transparent border border-white/10 rounded-2xl p-4 text-center shrink-0 flex flex-col justify-center">
                                                     <p className="text-xs font-black text-[#fadb04] uppercase mb-3 tracking-widest">
-                                                        Contoh Foto 3 Orang
+                                                        Contoh Foto
                                                     </p>
                                                     <div className="w-full aspect-[4/5] bg-black/50 rounded-xl overflow-hidden border border-white/20 relative shadow-lg">
                                                         <img
-                                                            src="/images/daffa.jpeg"
+                                                            src="/images/pose.png"
                                                             alt="Contoh Pose"
                                                             className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
                                                         />
@@ -956,61 +1080,82 @@ export default function FormPendaftaran() {
                                     </div>
                                 )}
 
-                                {/* STEP 6: PAYMENT */}
+                                {/* STEP 6: PAYMENT (KHUSUS SMA) */}
                                 {currentStep === 6 && (
                                     <div className="space-y-6 max-w-2xl mx-auto">
-                                        <div className="bg-gradient-to-br from-[#00d46a]/20 to-[#021810] p-10 rounded-3xl border border-[#00d46a]/30 shadow-[0_0_30px_rgba(0,212,106,0.1)] text-center relative overflow-hidden">
+                                        <div className="bg-gradient-to-br from-[#00d46a]/20 to-[#021810] p-8 rounded-3xl border border-[#00d46a]/30 shadow-[0_0_30px_rgba(0,212,106,0.1)] text-center relative overflow-hidden">
                                             <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#fadb04]/10 rounded-full blur-2xl"></div>
                                             <p className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">
-                                                Total Tagihan
+                                                Total Tagihan Pendaftaran SMA
                                             </p>
-                                            <h2 className="text-5xl font-black text-white mb-8">
+                                            <h2 className="text-5xl font-black text-white mb-6">
+                                                {/* HARGA KHUSUS SMA */}
                                                 Rp 350.000
                                             </h2>
-                                            <div className="bg-black/40 p-6 rounded-2xl border border-white/5 mb-8">
-                                                <p className="text-base text-white/60 mb-2">
-                                                    Transfer ke Bank Mandiri
-                                                </p>
-                                                <p className="text-3xl font-mono font-black text-[#fadb04] tracking-widest">
-                                                    136-00-1234567-8
-                                                </p>
-                                                <p className="text-sm font-bold text-white/80 mt-2">
-                                                    A.N. PANITIA FIX CUP 7.0
-                                                </p>
+
+                                            {/* OPSI PEMBAYARAN BARU */}
+                                            <div className="grid md:grid-cols-2 gap-4 mb-8">
+                                                {/* KOTAK MANDIRI */}
+                                                <div className="bg-black/40 p-5 rounded-2xl border border-white/10 flex flex-col justify-center transition-all hover:border-[#002776]/50 group relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-[#002776]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <p className="text-sm text-white/60 mb-1 relative z-10">
+                                                        Transfer Bank Mandiri
+                                                    </p>
+                                                    <p className="text-2xl font-mono font-black text-[#fadb04] tracking-widest my-2 relative z-10">
+                                                        1360037578306
+                                                    </p>
+                                                    <p className="text-xs font-bold text-white/80 relative z-10">
+                                                        A.N. Uray Rheyca
+                                                        Rahmadini
+                                                    </p>
+                                                </div>
+
+                                                {/* KOTAK DANA */}
+                                                <div className="bg-black/40 p-5 rounded-2xl border border-white/10 flex flex-col justify-center transition-all hover:border-[#118EEA]/50 group relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-[#118EEA]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <p className="text-sm text-white/60 mb-1 relative z-10">
+                                                        Transfer DANA
+                                                    </p>
+                                                    <p className="text-2xl font-mono font-black text-[#118EEA] tracking-widest my-2 relative z-10">
+                                                        089677574944
+                                                    </p>
+                                                    <p className="text-xs font-bold text-white/80 relative z-10">
+                                                        A.N. Uray Rheyca
+                                                        Rahmadini
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <input
-                                                type="file"
-                                                id="pay"
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    if (!checkFileSize(e))
-                                                        return;
-                                                    setData("payment", {
-                                                        bukti_pembayaran:
-                                                            e.target.files[0],
-                                                    });
-                                                }}
-                                            />
-                                            <label
-                                                htmlFor="pay"
-                                                className={`flex flex-col items-center justify-center w-full border-2 border-dashed ${data.payment.bukti_pembayaran ? "border-[#00d46a] bg-[#00d46a]/10" : "border-white/20 hover:border-[#fadb04]/50 bg-black/20"} rounded-2xl p-8 cursor-pointer transition-all`}
-                                            >
-                                                <span
-                                                    className={`font-bold text-lg ${data.payment.bukti_pembayaran ? "text-[#00d46a]" : "text-[#fadb04]"}`}
-                                                >
-                                                    {data.payment
-                                                        .bukti_pembayaran
-                                                        ? "✓ " +
-                                                          data.payment
-                                                              .bukti_pembayaran
-                                                              .name
-                                                        : "Upload Bukti Transfer"}
-                                                </span>
-                                                <p className="text-xs text-white/40 mt-2">
-                                                    Format: JPG, PNG, PDF
-                                                </p>
-                                            </label>
+
+                                            {/* Implementasi Preview Payment */}
+                                            <div className="text-left w-full h-48">
+                                                <FileUploadPreview
+                                                    id="payment-proof"
+                                                    label="Bukti Pembayaran / Transfer"
+                                                    helperText="Format: JPG, PNG, PDF"
+                                                    accept="image/jpeg, image/png, image/jpg, application/pdf"
+                                                    file={
+                                                        data.payment
+                                                            .bukti_pembayaran
+                                                    }
+                                                    onFileChange={(file) => {
+                                                        if (
+                                                            !checkFileSize(file)
+                                                        )
+                                                            return false;
+                                                        setData("payment", {
+                                                            bukti_pembayaran:
+                                                                file,
+                                                        });
+                                                        return true;
+                                                    }}
+                                                    onRemove={() =>
+                                                        setData("payment", {
+                                                            bukti_pembayaran:
+                                                                null,
+                                                        })
+                                                    }
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -1234,24 +1379,86 @@ export default function FormPendaftaran() {
                         >
                             ← Kembali
                         </button>
-                        <button
-                            onClick={
-                                currentStep === steps.length
-                                    ? handleSubmit
-                                    : handleNext
-                            }
-                            disabled={processing}
-                            className="bg-gradient-to-r from-[#fadb04] to-[#ffe95c] text-black px-10 md:px-14 py-3.5 rounded-full font-black text-sm shadow-[0_10px_20px_rgba(250,219,4,0.3)] hover:shadow-[0_10px_30px_rgba(250,219,4,0.5)] hover:scale-105 transition-all flex items-center gap-2"
-                        >
-                            {processing
-                                ? "Memproses..."
-                                : currentStep === steps.length
-                                  ? "Kirim Pendaftaran"
-                                  : "Selanjutnya"}
-                            {currentStep !== steps.length && !processing && (
-                                <span>→</span>
-                            )}
-                        </button>
+
+                        {/* TOMBOL SUBMIT INTERAKTIF KETIKA DI STEP TERAKHIR */}
+                        {currentStep === steps.length ? (
+                            <div className="w-full flex flex-col items-center gap-4">
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={processing}
+                                    className={`relative overflow-hidden px-10 py-3.5 rounded-full font-black text-sm transition-all flex items-center justify-center gap-2
+                                        ${
+                                            processing
+                                                ? "bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600 w-full md:w-auto"
+                                                : "bg-gradient-to-r from-[#fadb04] to-[#ffe95c] text-black shadow-[0_10px_20px_rgba(250,219,4,0.3)] hover:shadow-[0_10px_30px_rgba(250,219,4,0.5)] hover:scale-105"
+                                        }
+                                    `}
+                                >
+                                    {processing ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#fadb04]"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                            </svg>
+                                            Mengirim Berkas...
+                                        </>
+                                    ) : (
+                                        "Kirim Pendaftaran"
+                                    )}
+                                </button>
+
+                                {/* Progress Bar Pintar */}
+                                {processing && progress && (
+                                    <div className="w-full max-w-sm mt-2 animate-pulse">
+                                        <div className="flex justify-between text-xs font-bold text-[#fadb04] mb-1 px-1">
+                                            <span>
+                                                {progress.percentage === 100
+                                                    ? "⏳ Memproses Data di Server..."
+                                                    : "🚀 Mengunggah Berkas..."}
+                                            </span>
+                                            <span>{progress.percentage}%</span>
+                                        </div>
+                                        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700 shadow-inner">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-[#fadb04] to-[#00d46a] rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(0,212,106,0.5)]"
+                                                style={{
+                                                    width: `${progress.percentage}%`,
+                                                }}
+                                            />
+                                        </div>
+                                        <p className="text-center text-[10px] text-gray-400 mt-2 italic">
+                                            {progress.percentage === 100
+                                                ? "*Data sedang diproses oleh sistem. Mohon jangan tutup halaman ini."
+                                                : "*Tergantung kecepatan internet. Jangan tutup halaman ini."}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <button
+                                onClick={handleNext}
+                                disabled={processing}
+                                className="bg-gradient-to-r from-[#fadb04] to-[#ffe95c] text-black px-10 md:px-14 py-3.5 rounded-full font-black text-sm shadow-[0_10px_20px_rgba(250,219,4,0.3)] hover:shadow-[0_10px_30px_rgba(250,219,4,0.5)] hover:scale-105 transition-all flex items-center gap-2"
+                            >
+                                Selanjutnya <span>→</span>
+                            </button>
+                        )}
                     </div>
                 </motion.div>
             </main>
@@ -1414,21 +1621,45 @@ export default function FormPendaftaran() {
                                     Resmi Terdaftar ke Arena!
                                 </p>
                             </motion.div>
-                            <motion.a
-                                href="/"
-                                whileHover={{
-                                    scale: 1.05,
-                                    boxShadow:
-                                        "0px 0px 30px rgba(250,219,4,0.8)",
-                                }}
-                                whileTap={{ scale: 0.95 }}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 1 }}
-                                className="bg-gradient-to-r from-[#fadb04] to-[#ffe95c] text-[#020d08] px-10 py-4 md:px-14 md:py-5 rounded-full font-black text-sm md:text-lg shadow-[0_10px_40px_rgba(250,219,4,0.5)] flex items-center gap-3 uppercase tracking-widest border border-white/50"
-                            >
-                                <span>🏆</span> Kembali ke Beranda
-                            </motion.a>
+
+                            {/* --- CONTAINER TOMBOL --- */}
+                            <div className="flex flex-col md:flex-row gap-4 mt-2">
+                                {/* TOMBOL WHATSAPP BARU */}
+                                <motion.a
+                                    href="https://chat.whatsapp.com/L73M3VrlZpHEgjl1wfo1ms?mode=gi_t"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    whileHover={{
+                                        scale: 1.05,
+                                        boxShadow:
+                                            "0px 0px 30px rgba(37,211,102,0.8)",
+                                    }}
+                                    whileTap={{ scale: 0.95 }}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.8 }}
+                                    className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white px-8 py-4 md:px-10 md:py-5 rounded-full font-black text-sm md:text-lg shadow-[0_10px_40px_rgba(37,211,102,0.5)] flex items-center justify-center gap-3 uppercase tracking-widest border border-white/50"
+                                >
+                                    <span>📱</span> Join Grup WA
+                                </motion.a>
+
+                                {/* TOMBOL KEMBALI KE BERANDA (ASLI) */}
+                                <motion.a
+                                    href="/"
+                                    whileHover={{
+                                        scale: 1.05,
+                                        boxShadow:
+                                            "0px 0px 30px rgba(250,219,4,0.8)",
+                                    }}
+                                    whileTap={{ scale: 0.95 }}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1 }}
+                                    className="bg-gradient-to-r from-[#fadb04] to-[#ffe95c] text-[#020d08] px-8 py-4 md:px-10 md:py-5 rounded-full font-black text-sm md:text-lg shadow-[0_10px_40px_rgba(250,219,4,0.5)] flex items-center justify-center gap-3 uppercase tracking-widest border border-white/50"
+                                >
+                                    <span>🏆</span> Kembali ke Beranda
+                                </motion.a>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

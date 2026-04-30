@@ -37,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
     // Semua yang ada di dalam sini aman dari intipan orang luar
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/team/{id}', [AdminController::class, 'show'])->name('admin.team.show');
-    
+    Route::delete('/admin/team/{id}', [AdminController::class, 'destroy'])->name('admin.team.destroy');
     // Rute Profile (Bawaan Breeze, opsional)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

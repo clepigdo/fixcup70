@@ -1,8 +1,19 @@
 import React from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react"; // 1. Tambahkan router di sini
 import { motion } from "framer-motion";
 
 export default function Dashboard({ teams }) {
+    // 2. Buat fungsi untuk handle tombol Hapus
+    const handleDelete = (id, namaTim) => {
+        if (
+            confirm(
+                `Peringatan! Apakah Anda yakin ingin menghapus tim "${namaTim}"? Semua data, dokumen, dan foto tim ini akan hilang permanen.`,
+            )
+        ) {
+            router.delete(`/admin/team/${id}`);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#020d08] text-white font-sans p-6 md:p-10 relative overflow-hidden">
             <Head title="Admin Dashboard | FIX CUP" />
@@ -73,7 +84,6 @@ export default function Dashboard({ teams }) {
                                     </tr>
                                 ) : (
                                     teams.map((team, index) => {
-                                        // Cari kontak captain dari relasi
                                         const captain = team.contacts.find(
                                             (c) => c.role === "captain",
                                         );
@@ -121,13 +131,27 @@ export default function Dashboard({ teams }) {
                                                         </span>
                                                     )}
                                                 </td>
+                                                {/* 3. MODIFIKASI KOLOM AKSI DI SINI */}
                                                 <td className="p-5 text-center">
-                                                    <Link
-                                                        href={`/admin/team/${team.id}`}
-                                                        className="bg-white/10 hover:bg-[#fadb04] text-white hover:text-black px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-lg inline-block"
-                                                    >
-                                                        Detail
-                                                    </Link>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Link
+                                                            href={`/admin/team/${team.id}`}
+                                                            className="bg-white/10 hover:bg-[#fadb04] text-white hover:text-black px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-lg inline-block"
+                                                        >
+                                                            Detail
+                                                        </Link>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    team.id,
+                                                                    team.nama,
+                                                                )
+                                                            }
+                                                            className="bg-red-500/10 border border-red-500/30 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-lg inline-block"
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

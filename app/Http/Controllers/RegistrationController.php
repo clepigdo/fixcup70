@@ -11,25 +11,35 @@ class RegistrationController extends Controller
 {
     public function store(Request $request)
     {
-        // ==========================================
-        // 🛡️ LAPISAN KEAMANAN: VALIDASI UKURAN FILE (MAX 500KB)
-        // ==========================================
+        $aturanAman = 'nullable|file|mimes:jpeg,webp,png,jpg,pdf,doc,docx,xls,xlsx,zip,rar|max:500';
+
         $request->validate([
-            'logo'                       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'players.*.pas_foto'         => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'players.*.foto_kartu'       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'officials.*.pas_foto'       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'officials.*.foto_ktp'       => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'documents.foto_tim_berjersey'=> 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'documents.foto_jersey_pemain'=> 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'documents.foto_jersey_kiper' => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'documents.surat_rekomendasi' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:500',
-            'documents.foto_player_satu'  => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'documents.foto_player_dua'   => 'nullable|file|mimes:jpeg,png,jpg|max:500',
-            'payment.bukti_pembayaran'    => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:500',
+            // Identitas Tim
+            'logo'                        => $aturanAman,
+
+            // Data Pemain
+            'players.*.pas_foto'          => $aturanAman,
+            'players.*.foto_kartu'        => $aturanAman,
+
+            // Data Official
+            'officials.*.pas_foto'        => $aturanAman,
+            'officials.*.foto_ktp'        => $aturanAman,
+
+            // Dokumen Tim & Promosi
+            'documents.foto_tim_berjersey'=> $aturanAman,
+            'documents.foto_jersey_pemain'=> $aturanAman,
+            'documents.foto_jersey_kiper' => $aturanAman,
+            'documents.surat_rekomendasi' => $aturanAman,
+            'documents.foto_player_satu'  => $aturanAman,
+            'documents.foto_player_dua'   => $aturanAman,
+
+            // Bukti Pembayaran
+            'payment.bukti_pembayaran'    => $aturanAman,
         ], [
-            'max'   => 'Gagal! Ada file unggahan yang ukurannya melebihi batas 500 KB. Silakan kompres gambar Anda terlebih dahulu.',
-            'mimes' => 'Format file harus berupa JPG, JPEG, PNG, atau PDF.',
+            // Pesan Error Custom (Biar user paham salahnya di mana)
+            'max'   => 'Gagal! Ada file unggahan yang ukurannya melebihi batas 500 KB. Silakan kompres file Anda terlebih dahulu.',
+            'mimes' => 'Format file ditolak! Harap upload file dengan format yang diizinkan (JPEG, JPG, PDF).',
+            'file'  => 'Terjadi kesalahan sistem. Pastikan data yang diupload benar-benar sebuah file.',
         ]);
 
         DB::beginTransaction();

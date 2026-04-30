@@ -28,4 +28,15 @@ class AdminController extends Controller
             'team' => $team
         ]);
     }
+    // Tambahkan ini di dalam AdminController.php
+    public function destroy($id)
+    {
+        $team = \App\Models\Team::findOrFail($id);
+        
+        // Hapus tim dari database
+        $team->delete();
+
+        // Kembali ke halaman dashboard admin
+        return redirect()->route('admin.dashboard');
+    }
 }

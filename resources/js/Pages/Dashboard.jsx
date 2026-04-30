@@ -641,7 +641,7 @@ export default function Dashboard() {
                                 <div className="absolute inset-0 bg-gradient-to-tr from-[#009b3a]/30 via-transparent to-[#fadb04]/30 blur-[40px] rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                                 <div className="relative rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#fadb04]/50 shadow-[0_20px_50px_rgba(0,0,0,0.8)] group-hover:shadow-[0_20px_50px_rgba(250,219,4,0.15)] transition-all duration-500">
                                     <img
-                                        src="/images/poster.jpg"
+                                        src="/images/poster1.jpeg"
                                         alt="Official Poster"
                                         className="relative w-72 md:w-[320px] object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                                     />
@@ -772,7 +772,7 @@ export default function Dashboard() {
                         onClick={() => setPosterOpen(false)}
                     >
                         <motion.img
-                            src="/images/poster.jpg"
+                            src="/images/poster1.jpeg"
                             initial={{ scale: 0.7 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.7, opacity: 0 }}
@@ -995,18 +995,35 @@ export default function Dashboard() {
                             </span>
                             .
                         </p>
-                        <motion.button
-                            whileHover={{
-                                scale: 1.05,
-                                boxShadow: "0 0 40px rgba(250,219,4,0.7)",
-                            }}
-                            whileTap={{ scale: 0.95 }}
-                            className="relative overflow-hidden bg-gradient-to-r from-[#fadb04] to-[#ffea6e] text-black px-12 py-5 rounded-full font-black text-xl shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-all group/btn"
-                        >
-                            <span className="relative z-10 flex items-center justify-center gap-3">
-                                📥 DOWNLOAD GUIDE BOOK
-                            </span>
-                        </motion.button>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10">
+                            {/* Tombol Download SMA */}
+                            <motion.a
+                                href="https://docs.google.com/document/d/1zJntaEUXSALPJtEWY_hA4l9H5fYO7v0z8lhCVf0_bF8/export?format=pdf"
+                                whileHover={{
+                                    scale: 1.05,
+                                    boxShadow: "0 0 30px rgba(250,219,4,0.4)",
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                className="w-full sm:w-auto bg-[#fadb04] text-black px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-lg"
+                            >
+                                <span className="text-2xl">🎒</span>
+                                GUIDE BOOK SMA
+                            </motion.a>
+
+                            {/* Tombol Download Mahasiswa */}
+                            <motion.a
+                                href="https://docs.google.com/document/d/1vagABUpq_bog3mYJBVC7b3r3o_dNz8rTlRzhiH1T6g8/export?format=pdf"
+                                whileHover={{
+                                    scale: 1.05,
+                                    boxShadow: "0 0 30px rgba(255,255,255,0.2)",
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 backdrop-blur-sm transition-all"
+                            >
+                                <span className="text-2xl">🎓</span>
+                                GUIDE BOOK PRODI
+                            </motion.a>
+                        </div>
                     </div>
                 </motion.div>
             </section>
